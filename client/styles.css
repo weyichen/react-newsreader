@@ -1,0 +1,42 @@
+.itemCards {
+  float: left;
+  width: 75%;
+}
+
+.subscriptionBox {
+  float: left;
+  width: 20%;
+}
+
+.mdl-card {
+  float: left;
+  margin: 20px;
+  height: 400px;
+}
+.mdl-card__title {
+  color: #fff;
+  height: 45%;
+  overflow: hidden;
+  background-repeat: no-repeat;
+  background-position: center;
+  border-bottom: 1px solid #EFEFEF;
+}
+
+.title-text {
+  font-weight: bold;
+  height: 10%;
+  overflow: hidden;
+  margin-bottom: 15px;
+}
+.description {
+  height: 35%;
+  overflow: hidden;
+}
+
+.mdl-card__supporting-text {
+  font-size: 1em;
+}
+
+.mdl-card__menu {
+  color: #fff;
+}
