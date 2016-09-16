@@ -29,7 +29,7 @@ mongoose.connect(CF.MONGODB_URI, function (err) {
 /**
   ** MIDDLEWARE **
 **/
-app.use('/', express.static(path.join(__dirname, '/..', '/client/dist')));
+app.use('/', express.static(path.join(__dirname, '/..', '/dist')));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -56,37 +56,30 @@ app.use(flash());
 **/
 app.use('/', routes);
 
-
 app.get('/parsefeed', (req, res) => {
-  feedHelpers.parseFeed(req.query.feedUrl)
-
-    .then( (r) => {
-      const meta = r[0].meta;
-      var image = meta.image && meta.image.url;
-
-      return Promise.all([
-        {title: meta.title, image: image},
-        Promise.all( r.map( (item) => feedHelpers.cleanItem(item) ) )
-      ]);
-    })
-
-    .then((r) => res.send({ ok: true, data: { meta: r[0], items: r[1] } }));
+  feedHelpers.getItems(req.query.feedUrl)
+  .then(r => feedHelpers.cleanItems(r))
+  .then(r => res.send({ ok: true, data: { meta: r[0], items: r[1] } }));
 });
 
+app.get('/get-meta', (req, res) => {
+  feedHelpers.getMeta(req.query.feedUrl)
+  .then(meta => feedHelpers.cleanMeta(meta))
+  .then(meta => res.json({ ok: true, data: meta }))
+  .catch(error => res.json({ ok: false, error: error }));
+});
 
 // returns just the first item in the feed with metadata so we can examine it
 app.get('/rawfeed', (req, res) => {
-  feedHelpers.parseFeed(req.query.feedUrl)
-    .then((r) => {
-      r.ok = true;
-      res.send(r[0]);
-    })
+  feedHelpers.getItems(req.query.feedUrl)
+  .then((r) => res.json({ ok: true, data: {meta: r.meta, items: [r.items[0]] }}))
+  .catch(error => res.json({ ok: false, error: error }));
 });
 
 
 app.get('*', (req, res) => {
   if (!path.extname(req.path)) {
-    res.sendFile('index.html', {root: __dirname + '/../client/'});
+    res.sendFile('index.html', {root: __dirname + '/../dist'});
   }
   else {
     res.status(404).end();

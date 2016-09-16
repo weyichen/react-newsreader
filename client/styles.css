@@ -8,16 +8,21 @@ a:hover {
 
 .material-icons {
   vertical-align: top;
+  font-size: inherit;
 }
 
 .loginBox {
   float: right;
 }
 
-.subscriptionBox {
+.sidebar {
   float: left;
   width: 300px;
   padding: 10px;
+}
+
+.subscriptions {
+
 }
 
 .subList {
@@ -29,9 +34,43 @@ a:hover {
   font-size: 16px;
 }
 
+.sourceItem {
+  float: left;
+  margin: 20px;
+  height: 200px;
+  border: 1px solid #D8D8D8;
+}
+.SourceItem:hover {
+  border-color: gray;
+}
+
+.sourcePicture {
+  height: 45%;
+  overflow: hidden;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  border-bottom: 1px solid #EFEFEF;
+}
+
+.sourceTitle {
+  font-weight: bold;
+  height: 1.1em;
+  overflow: hidden;
+  margin-bottom: 15px;
+}
+
+.sourceDescription {
+  height: 2.2em;
+  overflow: hidden;
+  margin-bottom: 15px;
+}
+
+
+
 .feedTitle {
   font-size: 26px;
-  padding: 20px 20px 0px 20px;
+  padding: 0px 20px;
 }
 
 .feedItems {
@@ -54,6 +93,7 @@ a:hover {
   overflow: hidden;
   background-repeat: no-repeat;
   background-position: center;
+  background-size: 100% auto;
   border-bottom: 1px solid #EFEFEF;
 }
 
@@ -64,8 +104,9 @@ a:hover {
   margin-bottom: 15px;
 }
 .description {
-  height: 8.8em;
+  height: 6.6em;
   overflow: hidden;
+  margin-bottom: 15px;
 }
 
 .mdl-card__supporting-text {

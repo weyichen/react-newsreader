@@ -5,44 +5,45 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "concurrently \"npm run webpack\" \"nodemon server/app.js\"",
+    "start": "rimraf dist && concurrently \"npm run webpack\" \"nodemon server/app.js\"",
     "webpack": "webpack --progress --colors --watch",
-    "wp-server": "webpack-dev-server --content-base 'client' --progress --colors"
+    "postinstall": "rimraf dist && webpack --progress --profile --colors && node server/app.js"
   },
   "author": "Daniel Wei",
   "license": "ISC",
   "dependencies": {
+    "babel-core": "^6.14.0",
+    "babel-loader": "^6.2.5",
+    "babel-preset-es2015": "^6.14.0",
+    "babel-preset-react": "^6.11.1",
     "bcrypt-nodejs": "0.0.3",
     "body-parser": "^1.15.2",
     "connect-flash": "^0.1.1",
     "connect-mongo": "^1.3.2",
+    "css-loader": "^0.24.0",
     "express": "^4.14.0",
     "express-session": "^1.14.1",
+    "extract-text-webpack-plugin": "^1.0.1",
     "feedparser": "^1.1.4",
+    "file-loader": "^0.9.0",
+    "html-loader": "^0.4.3",
+    "html-webpack-plugin": "^2.22.0",
     "htmlparser2": "^3.9.1",
     "mongoose": "^4.6.0",
+    "normalize-url": "^1.6.1",
     "passport": "^0.3.2",
     "passport-local": "^1.0.0",
     "react": "^15.3.1",
     "react-dom": "^15.3.1",
     "react-redux": "^4.4.5",
     "redux": "^3.5.2",
-    "request": "^2.74.0"
+    "request": "^2.74.0",
+    "rimraf": "^2.5.4",
+    "style-loader": "^0.13.1",
+    "webpack": "^1.13.2"
   },
   "devDependencies": {
-    "babel-core": "^6.14.0",
-    "babel-loader": "^6.2.5",
-    "babel-preset-es2015": "^6.14.0",
-    "babel-preset-react": "^6.11.1",
     "concurrently": "^2.2.0",
-    "css-loader": "^0.24.0",
-    "extract-text-webpack-plugin": "^1.0.1",
-    "file-loader": "^0.9.0",
-    "html-loader": "^0.4.3",
-    "html-webpack-plugin": "^2.22.0",
-    "redux-devtools": "^3.3.1",
-    "style-loader": "^0.13.1",
-    "webpack": "^1.13.2",
-    "webpack-dev-server": "^1.15.0"
+    "redux-devtools": "^3.3.1"
   }
 }

@@ -2,46 +2,83 @@ const request = require('request');
 const FeedParser = require('feedparser');
 const htmlparser = require('htmlparser2');
 
-exports.parseFeed = function(feedUrl) {
+exports.getMeta = (url) => {
+  return new Promise((resolve, reject) => {
+    setup(url)
+    .then(parser => {
+      parser.on('readable', function() { // do not use arrow fn!!!!!!!!!!!!!!!!!!!
+        if (!this.meta.xmlurl) this.meta.xmlurl = url;
+        resolve(this.meta); // *this* is why
+      });
+    })
+    .catch(error => reject(error));
+  });
+}
+
+exports.cleanMeta = (meta) => {
+  var image = meta.image && meta.image.url;
+  return {
+    name: meta.title,
+    rss: meta.xmlurl,
+    description: meta.description,
+    image: image,
+  };
+}
+
+exports.getItems = (url) => {
+  return new Promise((resolve, reject) => {
+    setup(url)
+    .then(parser => {
+      var meta, items = [], i = 0;
+      parser.on('readable', function() { // do not use arrow fn!!!!!!!!!!!!!!!!!!!
+        var stream = this; // *this* is why
+          var item;
+          if (!this.meta.xmlurl) this.meta.xmlurl = url;
+          meta = this.meta;
+          while(item = stream.read()) {
+            items[i] = item;
+            i++;
+          }
+      });
+      parser.on('end', () => {
+        resolve({items: items, meta: meta});
+      });
+    })
+    .catch(error => reject(error));
+  });
+}
+
+exports.cleanItems = (feed) => {
+  return Promise.all([
+    exports.cleanMeta(feed.meta),
+    Promise.all(feed.items.map((item) => cleanItem(item)))
+  ]);
+}
+
+
+function setup (url) {
   return new Promise((resolve, reject) => {
     var feedParser = new FeedParser();
-    request
-      .get(feedUrl)
-      .on('error', (error) => {
-        reject(error);
-      })
-      .on('response', (response) => {
-        if (response.statusCode !== 200) {
-          reject('HTTP response error ' + response.statusCode);
-        }
-      })
-      .pipe(feedParser);
-
     feedParser.on('error', (error) => {
       reject(error);
     });
 
-    var items = [], i = 0;
-    feedParser.on('readable', function() { // do not use arrow fn!!!!!!!!!!!!!!!!!!!
-      var stream = this; // *this* is why
-        
-        var item;
-        while(item = stream.read()) {
-          items[i] = item;
-          i++;
-        }
-    });
-
-    feedParser.on('end', () => {
-
-      resolve(items);
-    });
-
-  });  
+    request
+    .get(url)
+    .on('error', (error) => {
+      reject(error);
+    })
+    .on('response', (response) => {
+      if (response.statusCode !== 200) {
+        reject('HTTP response error ' + response.statusCode);
+      }
+      resolve(feedParser);
+    })
+    .pipe(feedParser);
+  });
 }
 
-
-exports.cleanItem = function(item) {
+function cleanItem (item) {
   return new Promise((resolve, reject) => {
     var cleaned = {
       guid: item.guid,
@@ -59,7 +96,8 @@ exports.cleanItem = function(item) {
 
     if (cleaned.image = 
       item['media:content'] && 
-      item['media:content']['@'] && 
+      item['media:content']['@'] &&
+      item['media:content']['@'].medium === 'image' &&
       item['media:content']['@'].url
     )
       return resolve(cleaned);

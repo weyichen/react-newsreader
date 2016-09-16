@@ -29,7 +29,7 @@ exports.getLoggedInUser = function (req, res) {
     res.json({ ok: true, data: req.user });
   }
   else
-    res.json({ ok: false });
+    res.json({ ok: true });
 };
 
 
