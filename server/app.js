@@ -7,7 +7,7 @@ const passport = require('passport');
 const flash = require('connect-flash');
 const path = require('path');
 
-const feedHelpers = require('./processFeedHelpers');
+const feedParser = require('./controllers/feedParser');
 
 const app = express();
 const routes = require('./routes');
@@ -57,21 +57,21 @@ app.use(flash());
 app.use('/', routes);
 
 app.get('/parsefeed', (req, res) => {
-  feedHelpers.getItems(req.query.feedUrl)
-  .then(r => feedHelpers.cleanItems(r))
+  feedParser.getItems(req.query.feedUrl)
+  .then(r => feedParser.cleanItems(r))
   .then(r => res.send({ ok: true, data: { meta: r[0], items: r[1] } }));
 });
 
 app.get('/get-meta', (req, res) => {
-  feedHelpers.getMeta(req.query.feedUrl)
-  .then(meta => feedHelpers.cleanMeta(meta))
+  feedParser.getMeta(req.query.feedUrl)
+  .then(meta => feedParser.cleanMeta(meta))
   .then(meta => res.json({ ok: true, data: meta }))
   .catch(error => res.json({ ok: false, error: error }));
 });
 
 // returns just the first item in the feed with metadata so we can examine it
 app.get('/rawfeed', (req, res) => {
-  feedHelpers.getItems(req.query.feedUrl)
+  feedParser.getItems(req.query.feedUrl)
   .then((r) => res.json({ ok: true, data: {meta: r.meta, items: [r.items[0]] }}))
   .catch(error => res.json({ ok: false, error: error }));
 });
