@@ -10,7 +10,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "rimraf dist && concurrently \"npm run webpack\" \"nodemon server/app.js\"",
     "webpack": "webpack --progress --colors --watch",
-    "postinstall": "rimraf dist && webpack --progress --profile --colors && node server/app.js"
+    "postinstall": "rimraf dist && webpack --progress --profile --colors"
   },
   "author": "Daniel Wei",
   "license": "ISC",
