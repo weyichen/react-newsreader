@@ -1,7 +1,10 @@
 {
-  "name": "own-setup",
+  "name": "react-newsreader",
   "version": "1.0.0",
   "description": "A React.JS starter kit",
+  "engines": {
+    "node": "6.5.0"
+  },
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
