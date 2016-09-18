@@ -12,8 +12,9 @@ class FeedReader extends React.Component {
     this.state = {
       user: {},
       subs: [],
+      subEditMode: false,
       sources: [],
-      showSources: false,
+      sourcesMode: false,
       feed: {}
     };
     this.login = this.login.bind(this);
@@ -23,10 +24,11 @@ class FeedReader extends React.Component {
     this.addSub = this.addSub.bind(this);
     this.deleteSub = this.deleteSub.bind(this);
     this.updateSubs = this.updateSubs.bind(this);
+    this.swapSubs = this.swapSubs.bind(this);
 
     this.getSources = this.getSources.bind(this);
-    this.updateSourcesStatus = this.updateSourcesStatus.bind(this);
     this.displaySources = this.displaySources.bind(this);
+    this.syncSourcesAndSubs = this.syncSourcesAndSubs.bind(this);
 
     this.subscribe = this.subscribe.bind(this);
     this.subscribeByUrl = this.subscribeByUrl.bind(this);
@@ -53,10 +55,7 @@ class FeedReader extends React.Component {
 
   getSubs() {
     api.subs_get()
-    .then(subs => {
-      this.setState({ subs: subs })
-      this.updateSourcesStatus();
-    })
+    .then(subs => this.syncSourcesAndSubs(subs, false))
     .catch(err => console.log(err));
   }
 
@@ -72,34 +71,47 @@ class FeedReader extends React.Component {
   }
 
   updateSubs(subs) {
-    this.setState({ subs: subs });
-    this.updateSourcesStatus();
-    api.subs_post(this.state.subs)
+    this.syncSourcesAndSubs(subs, false);
+    api.subs_post(subs)
     .then(() => console.log("subs saved!"))
     .catch(err => console.log(err));
   }
 
+  swapSubs(i, j) {
+    var subs = this.state.subs;
+    var drag = subs.splice(i, 1);
+    var tail = subs.splice(j);
+    subs = subs.concat(drag, tail);
+    this.updateSubs(subs);
+  }
+
   getSources() {
     api.source_list()
-    .then(sources => {
-      this.setState({ sources: sources });
-      this.updateSourcesStatus();
-    })
+    .then(sources => this.syncSourcesAndSubs(sources, true))
     .catch(err => console.log(err));
   }
 
   displaySources() {
-    this.setState({ showSources: true });
-    if (!this.state.sources.length) {
-      this.getSources();
-    }
+    this.setState({ sourcesMode: true });
+    this.getSources();
   }
 
-  updateSourcesStatus() {
-    var sources = this.state.sources;
+  /**
+    use this to update the state of either sources and subs, so that the state of which sources are subscribed to is always current
+  **/
+  syncSourcesAndSubs(newState, isSources) {
+    var sources, subs = null;
+    if (isSources) {
+      sources = newState;
+      subs = this.state.subs;
+    } else {
+      sources = this.state.sources;
+      subs = newState;
+      this.setState({ subs: subs });
+    }
     for (var i=0; i<sources.length; i++) {
       let s = sources[i];
-      s.added = this.state.subs.findIndex((e, i, a) => {return e.rss === s.rss}) !== -1;
+      s.added = subs.findIndex((e, i, a) => {return e.rss === s.rss}) !== -1;
     }
     this.setState({ sources: sources });
   }
@@ -108,7 +120,6 @@ class FeedReader extends React.Component {
     api.source_get(rss)
     .then(source => {
       this.addSub(source);
-      this.updateSourcesStatus();
     })
     .catch(err => console.log(err));
   }
@@ -154,7 +165,7 @@ class FeedReader extends React.Component {
 
   displayFeed(url) {
     api.parseFeed_get(url)
-    .then(feed => this.setState({ showSources: false, feed: feed }))
+    .then(feed => this.setState({ sourcesMode: false, feed: feed }))
     .catch(err => console.log(err));
   }
 
@@ -164,22 +175,20 @@ class FeedReader extends React.Component {
 
     api.loggedInUser_get()
     .then(user => {
-      if (user) {
-        this.setState({user: user});
-      }
+      if (user) this.setState({user: user});
       return;
     })
     .then(() => this.getSubs());
   }
 
   render() {
-    const { user, subs, sources, showSources, feed } = this.state;
+    const { user, subs, subEditMode, sources, sourcesMode, feed } = this.state;
 
-    var feedOrSourcesButton = showSources ?
-      <a href="#" onClick={() => this.setState({ showSources: false })}>Back To Newsfeed</a> :
+    var feedOrSourcesButton = sourcesMode ?
+      <a href="#" onClick={() => this.setState({ sourcesMode: false })}>Back To Newsfeed</a> :
       <a href="#" onClick={() => this.displaySources()}>Show Sources</a>;
 
-    var feedOrSources = showSources ?
+    var feedOrSources = sourcesMode ?
       <Sources
         sources={sources}
         handleSubscribe={(rss) => this.subscribe(rss)}
@@ -190,42 +199,94 @@ class FeedReader extends React.Component {
 
     return (
       <div className="feedReader">
-        <LoginBox
-          loggedIn = {user}
-          handleLogin = {(username, password) => this.login(username, password)}
-          handleLogout = {() => this.logout()}
-        />
-        
         <div className="sidebar">
           <Subscriptions
             subs={subs}
+            editMode={subEditMode}
+            handleEditMode={() => this.setState({ subEditMode: !subEditMode })}
+            handleDrop={(i, j) => this.swapSubs(i, j)}
             handleSelect={(url) => this.displayFeed(url)}
             handleDelete={(i) => this.deleteSub(i)}
           />
-          {feedOrSourcesButton}
+          <div>
+            {feedOrSourcesButton}
+          </div>
           <SubscribeInput
             handleSubscribe={(url) => this.subscribeByUrl(url)}
           />
+          <LoginBox
+            loggedIn = {user}
+            handleLogin = {(username, password) => this.login(username, password)}
+            handleLogout = {() => this.logout()}
+          />
         </div>
-        
-        {feedOrSources}
+
+        <div className="mainArea">
+          {feedOrSources}
+        </div>
       </div>
     );
   }
 }
 
 
-const Subscriptions = ({ subs, handleSelect, handleSubscribe, handleDelete }) => {
-  var subscriptionNodes = subs.map((sub, i) =>
-    <li key={sub.rss} className="subItem" draggable="true">
-        <i className="material-icons mdl-list__item-icon">person</i>
-        <a href='#' onClick={() => handleSelect(sub.rss)}>{sub.name}</a>
-        <a style={{float: 'right'}} href="#" onClick={() => handleDelete(i)}><i className="material-icons mdl-list__item-icon">delete</i></a>
-    </li>
+const Subscriptions = ({ subs, editMode, handleEditMode, handleDrag, handleDrop, handleSelect, handleDelete }) => {
+  /* 
+    http://www.html5rocks.com/en/tutorials/dnd/basics I modified the parts where HTML is transferred to fire events to rearrange the subscription array instead, so we don't have to deal with any child HTML messes
+  */
+  var dragged = null; // tracks the index of the sub that was dragged. When it is dropped onto a sub, it is sent together with the index of that sub
+
+  // enable drag-and-drop only in edit mode
+  var itemProps = editMode ?
+    {
+      draggable: true,
+      onDragEnter: (e) => e.target.classList.add('dragOver'),
+      onDragLeave: (e) => e.target.classList.remove('dragOver'),
+      onDragOver: (e) => e.preventDefault(), 
+      onDragEnd: (e) => e.target.classList.remove('drag')
+    } : null;
+  var editIcon = editMode ? "check" : "mode_edit";
+
+  var subscriptionNodes = subs.map((sub, i) => {
+    var nameText = editMode ?
+      sub.name :
+      <a href='#' onClick={() => handleSelect(sub.rss)}>{sub.name}</a>;
+
+    var deleteIcon = editMode ? 
+      <a href="#" className="sidebarRightIcon" onClick={() => handleDelete(i)}>
+        <i className="material-icons mdl-list__item-icon">delete</i>
+      </a> : null;
+
+      
+
+      if (editMode) {
+        itemProps.onDragStart = () => dragged = i;
+        itemProps.onDrop = (e) => { e.target.classList.remove('dragOver'); handleDrop(dragged, i); };
+      }
+
+    return (
+      <li key={sub.rss} className="subItem" 
+        {...itemProps}
+      >
+        <span className="subWrap">
+          <i className="material-icons mdl-list__item-icon">rss_feed</i>
+          {nameText}
+          {deleteIcon}
+        </span>
+      </li>
+    );
+  }
+    
   );
 
   return (
     <div className="subscriptions">
+      <div className="subsTitle">
+        My Subscriptions
+        <a href="#" className="sidebarRightIcon" onClick={() => handleEditMode()}>
+          <i className="material-icons mdl-list__item-icon">{editIcon}</i>
+        </a>
+      </div>
       <ul className="subList">
         {subscriptionNodes}
       </ul>
@@ -243,13 +304,15 @@ const SubscribeInput = ({ handleSubscribe }) => {
 
   return (
     <div className="subscribeInput">
-      <input className="mdl-textfield__input" type="text" placeholder="Feed URL"
+      Subscribe by URL:
+      <input className="mdl-textfield__input" type="text" placeholder="Feed URL" 
+        style={{width: '85%', display: 'inline'}}
         ref={(c) => rss = c}
         onKeyPress={(e) => {if (e.key === 'Enter') addClick() } } 
       />
-      <button onClick={() => addClick()}>
+      <a href="#" className="sidebarRightIcon" onClick={() => addClick()}>
         <i className="material-icons">add</i>
-      </button>
+      </a>
     </div>
   );
 }
@@ -259,9 +322,9 @@ const LoginBox = ({ loggedIn, handleLogin, handleLogout }) => {
   var username, password;
 
   var loginForm = 
-    <div className="loginForm">
-      <input type="text" placeholder="Username" ref={(c) => username = c} />
-      <input type="password" placeholder="Password" ref={(c) => password = c} />
+    <div className="loginForm" style={{textAlign: 'center'}}>
+      <input type="text" className="mdl-textfield__input" placeholder="Username" ref={(c) => username = c} />
+      <input type="password" className="mdl-textfield__input" placeholder="Password" ref={(c) => password = c} />
       <button onClick={() => handleLogin(username.value, password.value)}>Login</button>
     </div>;
 
@@ -292,6 +355,7 @@ const Sources = ({ sources, handleSubscribe }) => {
 
   return (
     <div className="feedItems">
+      <div className="titlebar">Subscribe to more feeds</div>
       {sourceNodes}
     </div>
   );
@@ -337,10 +401,10 @@ const FeedItems = ({ feed }) => {
 
   var itemNodes = items ? items.map((item, i) => <FeedItem key={item.guid} item={item} />) : null;
   
-  var metadata = meta ?
-    <div className="feedTitle">
+  var titlebar = meta ?
+    <div className="titlebar">
       {meta.name}
-      <a href={meta.rss}>
+      <a className="titlebarIcon" href={meta.rss} target="_blank">
         <i className="material-icons">rss_feed</i>
       </a>
     </div> :
@@ -348,7 +412,7 @@ const FeedItems = ({ feed }) => {
 
   return (
     <div className="feedItems">
-      {metadata}
+      {titlebar}
       {itemNodes}
     </div>
   );

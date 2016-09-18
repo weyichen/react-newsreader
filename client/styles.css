@@ -6,33 +6,58 @@ a:hover {
   text-decoration: underline;
 }
 
-.material-icons {
-  vertical-align: top;
-  font-size: inherit;
+[draggable=true] {
+  cursor: move;
 }
 
-.loginBox {
-  float: right;
+.material-icons {
+  vertical-align: top;
+}
+
+.feedReader {
+  padding: 10px;
 }
 
 .sidebar {
   float: left;
   width: 300px;
-  padding: 10px;
+}
+
+.sidebar>div {
+  margin-bottom: 10px;
+}
+
+.sidebarRightIcon {
+  float: right;
+}
+
+.subsTitle {
+  font-size: 24px;
 }
 
 .subscriptions {
-
 }
 
 .subList {
   list-style: none;
   padding: 0px;
+  max-height: 20em;
+  overflow: auto;
 }
 
 .subItem {
   font-size: 16px;
 }
+.subItem.drag {
+  opacity: 0.4;
+}
+.subItem.dragOver {
+  border: 2px dashed;
+}
+
+.loginBox {
+}
+
 
 .sourceItem {
   float: left;
@@ -68,9 +93,13 @@ a:hover {
 
 
 
-.feedTitle {
+.titlebar {
   font-size: 26px;
   padding: 0px 20px;
+}
+
+.titlebarIcon {
+  padding-left: 10px;
 }
 
 .feedItems {
